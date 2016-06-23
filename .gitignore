@@ -1,5 +1,7 @@
 .DS_Store
 .idea
+deepdream.pem
+deepdream.pub
 _scratch
 node_modules
 dist/OSMBuildings/*
