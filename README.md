@@ -8,7 +8,7 @@
 - then run grunt. 
 - You can go into test directory and everything should load.
 
-
+-rest calls: http://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/MAPPLUTO/FeatureServer/0/query?where=LandUse=5%20AND%20Borough=%27SI%27&outFields=*&outSR=4326&f=geojson
 
 # Info for OSM Buildings
 
