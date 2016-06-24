@@ -381,7 +381,8 @@ def application(environ, start_response):
             logger.warning('Error retrieving request body for async work.')
         response = ''
     else:
-        response = welcome
+        if path == '/':
+          response = welcome
     status = '200 OK'
     headers = [('Content-type', 'text/html')]
 
