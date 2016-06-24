@@ -369,25 +369,7 @@ welcome = """
 def application(environ, start_response):
     path    = environ['PATH_INFO']
     method  = environ['REQUEST_METHOD']
-    if method == 'POST':
-        try:
-            if path == '/':
-                request_body_size = int(environ['CONTENT_LENGTH'])
-                request_body = environ['wsgi.input'].read(request_body_size).decode()
-                logger.info("Received message: %s" % request_body)
-            elif path == '/scheduled':
-                logger.info("Received task %s scheduled at %s", environ['HTTP_X_AWS_SQSD_TASKNAME'], environ['HTTP_X_AWS_SQSD_SCHEDULED_AT'])
-        except (TypeError, ValueError):
-            logger.warning('Error retrieving request body for async work.')
-        response = ''
-    else:
-        if path == '/':
-          response = welcome
-    status = '200 OK'
-    headers = [('Content-type', 'text/html')]
 
-    start_response(status, headers)
-    return [response]
 
 
 if __name__ == '__main__':
