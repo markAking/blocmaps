@@ -36,7 +36,7 @@ def application(environ, start_response):
     path    = environ['PATH_INFO']
     method  = environ['REQUEST_METHOD']
 
-    if not resource:
+    if not path:
       path = "index.html"
 
     resp_file = path
