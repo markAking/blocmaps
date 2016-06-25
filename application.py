@@ -50,7 +50,7 @@ def application(environ, start_response):
 
     status = '200 OK'
     headers = []
-    headers.append(("Content-Type", content_type(resource))) 
+    headers.append(("Content-Type", content_type(path))) 
     start_response(status, headers)
     return [resp_file]
 
