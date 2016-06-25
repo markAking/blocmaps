@@ -26,21 +26,20 @@ welcome = """
 
 """
 
-def content_type(path):                                                          
-if path.endswith(".css"):                                                    
-    return "text/css"                            
-else:                                                                        
+def content_type(path):
+  if path.endswith(".css"):
+    return "text/css"
+  else:
     return "text/html"
 
 def application(environ, start_response):
     path    = environ['PATH_INFO']
     method  = environ['REQUEST_METHOD']
-    resource = path.split("/")[1] 
 
-    if not resource:                                                             
-      resource = "index.html"
+    if not resource:
+      path = "index.html"
 
-    resp_file = os.path.join("static", resource)
+    resp_file = path
 
     try:
       with open(resp_file, "r") as f:
