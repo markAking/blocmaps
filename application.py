@@ -40,6 +40,8 @@ def application(environ, start_response):
       path = "index.html"
 
     resp_file = path
+    headers = []
+    headers.append(("Content-Type", content_type(path)))
 
     try:
       with open(resp_file, "r") as f:
@@ -49,8 +51,7 @@ def application(environ, start_response):
         return ["404 Not Found"]
 
     status = '200 OK'
-    headers = []
-    headers.append(("Content-Type", content_type(path))) 
+
     start_response(status, headers)
     return [resp_file]
 
