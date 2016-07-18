@@ -92,7 +92,6 @@ render.Picking = {
         return;
       }
       var color = imageData[0] | (imageData[1]<<8) | (imageData[2]<<16);
-
       callback(this.idMapping[color]);
     }.bind(this));
   },

@@ -1,8 +1,16 @@
+import sys, os
+sys.stdout = sys.stderr
+
 import logging
 import logging.handlers
 
-from wsgiref.simple_server import make_server
-import os
+import json
+import pymongo
+from pymongo import MongoClient
+
+import atexit
+import threading
+import cherrypy
 
 # Create logger
 logger = logging.getLogger(__name__)
@@ -22,41 +30,55 @@ handler.setFormatter(formatter)
 # add Handler to Logger
 logger.addHandler(handler)
 
-welcome = """
+cherrypy.config.update({'environment': 'embedded'})
 
-"""
+if cherrypy.__version__.startswith('3.0') and cherrypy.engine.state == 0:
+		cherrypy.engine.start(blocking=False)
+		atexit.register(cherrypy.engine.stop)
 
-def content_type(path):
-  if path.endswith(".css"):
-    return "text/css"
-  else:
-    return "text/html"
+current_dir = os.path.abspath(os.path.dirname(__file__))
+conf = {
+	'/building_detail': {
+		'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+		'tools.response_headers.on': True,
+		'tools.response_headers.headers': [('Content-Type', 'application/json')],
+	},
+	'/styles': {
+		'tools.staticdir.on': True,
+		'tools.staticdir.dir': os.path.join(current_dir, 'styles')
+	},
+	'/src': {
+		'tools.staticdir.on': True,
+		'tools.staticdir.dir': os.path.join(current_dir, 'src')
+	},
+	'/tile': {
+		'tools.staticdir.on': True,
+		'tools.staticdir.dir': os.path.join(current_dir, 'tile')
+	},
+}
 
-def application(environ, start_response):
-    path    = environ['PATH_INFO']
-    method  = environ['REQUEST_METHOD']
+def openMongo():
+	client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
+	return client['blocmaps']
 
-    if not path:
-      path = "index.html"
+class Root(object):
+	def index(self, lat=None, lon=None, tilt=None, zoom=None, rotation=None ):
+		return open(os.path.join(current_dir, u'index.html'))
+	index.exposed = True
+	
+class Building_Detail(object):
+	exposed = True
+	@cherrypy.tools.accept(media='text/plain')
+	def GET(self, lat, lon, tilt, zoom):
+		return building_id
 
-    resp_file = path
-    headers = []
-    headers.append(("Content-Type", content_type(path)))
+	def POST(self, id=0):
+		db = openMongo()
+		cursor  = db.nyc.find({"_id": int(id)})
+		for document in cursor:
+			return json.dumps(document['properties'])
 
-    try:
-      with open(resp_file, "r") as f:
-        resp_file = f.read()
-    except Exception:
-        start_response("404 Not Found", headers)
-        return ["404 Not Found"]
-
-    status = '200 OK'
-
-    start_response(status, headers)
-    return [resp_file]
-
-
-if __name__ == '__main__':
-    httpd = make_server('', 8000, application)
-    print("Serving on port 8000...")
-    httpd.serve_forever()
+webapp = Root()
+webapp.building_detail = Building_Detail()
+application = cherrypy.Application(webapp, script_name=None, config=conf)
+#logger.warning

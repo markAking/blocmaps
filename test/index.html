@@ -126,7 +126,7 @@
   // START map //
   var map = new GLMap('map', {
     position: { latitude:40.69924, longitude:-74.01692 },
-    //bounds: { n:52.52050, e:13.41050, s:52.52000, w:13.41000 },
+    bounds: { n:-74.2533588736031, e:40.4989409997375, s:-73.6994027507486, w:40.9113726506172 },
     zoom: 16,
     minZoom: 12,
     maxZoom: 20,
@@ -194,6 +194,7 @@
 
   var mapSetup = function(id, properties) {
     //age = 2016-parseFloat(properties.YearBuilt);
+
     var ped = Math.ceil(parseFloat(properties.ped_energy));
     var min = 20000;
     var max = 300000;
@@ -207,17 +208,16 @@
       var color = color2color( "hsl("+h+",100%,50%)" );
     }
     properties.color = color
-    //console.log(properties.color)
     properties.roofColor = properties.color;
   };
   
-  // osmb.addGeoJSONTiles('https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json',{
-  //   modifier: colorByHeight,
-  //   color: '#CCCCCC'
-  // });
+  osmb.addGeoJSONTiles('https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json',{
+    modifier: colorByHeight,
+    color: '#CCCCCC'
+  });
 
 
-  osmb.addGeoJSONTiles('data/osm_ped.json', {modifier: mapSetup});
+  //osmb.addGeoJSONTiles('/tile/{z}/{x}/{y}.json', {modifier: mapSetup});
 
   //var obj = osmb.addOBJ('../../OBJ2GeoJSON/data/2015-09/o4/o4-nach90.obj', { latitude:52.51941, longitude:13.50445 }, { color: '#00ccff' });
   //osmb.addGeoJSON('../../OBJ2GeoJSON/data/geojson C/o2-nach90.geo.json', { color: '#00ccff' });

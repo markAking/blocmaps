@@ -4,6 +4,9 @@ _scratch
 node_modules
 dist/OSMBuildings/*
 dist/OSMBuildings*
+tile/*
+ec2
+blocmaps.zip
 
 src/Shaders.min.js
 lib/GLX.debug.js

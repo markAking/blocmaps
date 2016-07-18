@@ -4,90 +4,10 @@
   <title>OSM Buildings</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    .control {
-      position: absolute;
-      left: 0;
-      z-index: 1000;
-    }
-
-    .control.tilt {
-      top: 0;
-    }
-
-    .control.rotation {
-      top: 45px;
-    }
-
-    .control.zoom {
-      top: 90px;
-    }
-
-    .control.zoom button{
-      font-weight: normal;
-    }
-
-    .control button {
-      width: 30px;
-      height: 30px;
-      margin: 15px 0 0 15px;
-      border: 1px solid #999999;
-      background: #ffffff;
-      opacity: 0.6;
-      border-radius: 5px;
-      box-shadow: 0 0 5px #666666;
-      font-weight: bold;
-      text-align: center;
-    }
-
-    .control button:hover {
-      opacity: 1;
-      cursor: pointer;
-    }
-    .heatindex{
-      position: absolute;
-      left: 0;
-      top: 150px;
-      z-index: 1100;
-      margin: 0 15px;
-    }
-    .temp{
-      width: 60px;
-      height: 300px;
-      position: relative;
-      padding: 10px;
-      background: linear-gradient(to bottom, 
-        hsl(160,100%,50%) 0%,
-        hsl(128,100%,50%) 20%,
-        hsl(96,100%,50%) 40%,
-        hsl(64,100%,50%) 60%,
-        hsl(32,100%,50%) 80%,
-        hsl(1,100%,50%) 100%);
-    }
-    .high{
-      position: absolute;
-      top: 5px;
-    }
-    .low{
-      position: absolute;
-      bottom: 5px;
-    }
-  </style>
-  <link rel="stylesheet" href="dist/OSMBuildings/OSMBuildings.css">
+  <link rel="stylesheet" href="/styles/blocmaps.css">
   <script src="src/color2color.min.js"></script>
-  <script src="test/loader.js"></script>
+  <script src="src/jquery.min.js"></script>
+  <script src="src/OSMBuildings.js"></script>
 </head>
 
 <body>
@@ -119,14 +39,22 @@
     <div class="low">20000</div>
   </div>
 </div>
-
+<div id="details">
+  <div>
+    <h2>Property Details</h2>
+    <button class='close_details'>Close</button>
+  </div>
+  <div class="detail_container">
+    <table id="detail_list"></table>
+  </div>
+</div>
 <script>
   // SET temperature //
 
   // START map //
   var map = new GLMap('map', {
     position: { latitude:40.69924, longitude:-74.01692 },
-    //bounds: { n:52.52050, e:13.41050, s:52.52000, w:13.41000 },
+    bounds: { n:-74.2533588736031, e:40.4989409997375, s:-73.6994027507486, w:40.9113726506172 },
     zoom: 16,
     minZoom: 12,
     maxZoom: 20,
@@ -137,7 +65,7 @@
   //***************************************************************************
 
   var osmb = new OSMBuildings({
-    baseURL: './OSMBuildings',
+    baseURL: 'styles',
     minZoom: 12,
     maxZoom: 22,
     showBackfaces: false, 
@@ -206,8 +134,7 @@
     } else {
       var color = color2color( "hsl("+h+",100%,50%)" );
     }
-    properties.color = color
-    //console.log(properties.color)
+    properties.color = color;
     properties.roofColor = properties.color;
   };
   
@@ -216,18 +143,15 @@
   //   color: '#CCCCCC'
   // });
 
-
-  osmb.addGeoJSONTiles('test/data/osm_ped.json', {modifier: mapSetup});
-
-  //var obj = osmb.addOBJ('../../OBJ2GeoJSON/data/2015-09/o4/o4-nach90.obj', { latitude:52.51941, longitude:13.50445 }, { color: '#00ccff' });
-  //osmb.addGeoJSON('../../OBJ2GeoJSON/data/geojson C/o2-nach90.geo.json', { color: '#00ccff' });
+  osmb.addGeoJSONTiles('tile/{z}/{x}/{y}.json', {modifier: mapSetup});
 
   var label = document.getElementById('label');
-//  map.on('change', function() {
-//    var pos = osmb.project(52.52, 13.37, 50);
-//    label.style.left = Math.round(pos.x) + 'px';
-//    label.style.top = Math.round(pos.y) + 'px';
-//  });
+  map.on('change', function() {
+
+    var pos = osmb.project(52.52, 13.37, 50);
+    label.style.left = Math.round(pos.x) + 'px';
+    label.style.top = Math.round(pos.y) + 'px';
+  });
 
   map.on('pointermove', function(e) {
     osmb.getTarget(e.detail.x, e.detail.y, function(id) {
@@ -246,11 +170,20 @@
 //  });
 //
 
-//  map.on('pointerdown', function(e) {
-//    var id = osmb.getTarget(e.detail.x, e.detail.y, function(id) {
-//      console.log(id);
-//    });
-//  });
+  $('.close_details').on('click', function(e){ $('#details').hide(); })
+  map.on('pointerdown', function(e) {
+    //console.log(e)
+    var id = osmb.getTarget(e.detail.x, e.detail.y, function(id) {
+      $.post("/building_detail", {"id": id})
+      .done(function(response) {
+        $('#detail_list').empty();
+        for (var key in response){
+          $('#detail_list').append('<tr><td>'+key+'</td><td>'+response[key]+'</td></tr>');
+        }
+        $('#details').show();
+      });
+    });
+  });
 
   //*************************************************************************
 

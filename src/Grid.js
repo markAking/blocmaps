@@ -108,6 +108,7 @@ Grid.prototype = {
 
       var parentX = (tile[0] <<0) / 2;
       var parentY = (tile[1] <<0) / 2;
+
       
       if (parentTiles[ [parentX, parentY] ] === undefined) { //parent tile screen size unknown
         var numParentScreenPixels = getTileSizeOnScreen(parentX, parentY, zoom-1, render.viewProjMatrix);
@@ -164,6 +165,7 @@ Grid.prototype = {
       mapCenterTile = [ long2tile(MAP.position.longitude, zoom),
                         lat2tile (MAP.position.latitude,  zoom)];
 
+
     for (i = 0; i < 4; i++) {
       viewQuad[i] = getTilePositionFromLocal(viewQuad[i], zoom);
     }
@@ -172,7 +174,11 @@ Grid.prototype = {
     tiles = ( this.fixedZoom ) ?
       this.getClosestTiles(tiles, mapCenterTile) :
       this.mergeTiles(tiles, zoom, 0.5 * TILE_SIZE * TILE_SIZE);
-    
+
+    if(this.fixedZoom){
+      console.log(tiles)
+    }
+  
     this.visibleTiles = {};
     for (i = 0; i < tiles.length; i++) {
       if (tiles[i][2] === undefined) {
@@ -192,7 +198,6 @@ Grid.prototype = {
       }
 
       this.tiles[key] = new this.tileClass(tileX, tileY, tileZoom, this.tileOptions, this.tiles);
-
       queue.push({ tile:this.tiles[key], dist:distance2([tileX, tileY], mapCenterTile) });
     }
 
