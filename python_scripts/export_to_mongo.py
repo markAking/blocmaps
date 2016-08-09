@@ -1,3 +1,4 @@
+import urllib2
 import json
 from pandas.io.json import json_normalize
 import sys, os
@@ -73,36 +74,47 @@ def render_tiles(maxZoom=20):
 			c=c+1
 	print c
 
+
+offset = 0
 client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
 db = client['blocmaps']
-db.nyc.create_index([
-    ("tile_x", pymongo.ASCENDING),
-    ("tile_y", pymongo.ASCENDING)
-])
 
-with open('../data/landuse_05.json') as data_file:
-	data = json.load(data_file)
+def scraper(offset):
+	url = "http://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/MAPPLUTO/FeatureServer/0/query?where=LandUse%%3D1+AND+YearBuilt%%21%%3D0+AND+XCoord%%21%%3D0&outFields=*&resultOffset=%d&resultRecordCount=2000&outSR=4326&f=geojson" % offset
+
+	response = urllib2.urlopen(url)
+	data = json.load(response)
 	total = len(data['features'])
-	#render_tiles()
-	for item in range(3300,total):
-		building = data['features'][item]
-		lon = building['geometry']['coordinates'][0][0][0]
-		lat = building['geometry']['coordinates'][0][0][1]
-
-		if (isinstance(lon, list)):
-			lat = lon[1]
-			lon = lon [0]
-
-		key = {'_id':building['id']}
-		feature = {
-			"tile_x":long2tile(lon),
-			"tile_y":lat2tile(lat),
-			"XCoord":building['properties']['XCoord'],
-			"YCoord":building['properties']['YCoord'],
-			"type":"Feature",
-			"geometry":building['geometry'],
-			"properties":building['properties']
-		}
-		result = db.nyc.update_one(key, {"$set": feature}, upsert=True)
 	print total
+	if total >= 1:
+		for item in range(0,total):
+			building = data['features'][item]
+			lon = building['geometry']['coordinates'][0][0][0]
+			lat = building['geometry']['coordinates'][0][0][1]
 
+			if (isinstance(lon, list)):
+				lat = lon[1]
+				lon = lon [0]
+
+			key = {'_id':building['id']}
+			feature = {
+				"tile_x":long2tile(lon),
+				"tile_y":lat2tile(lat),
+				"XCoord":building['properties']['XCoord'],
+				"YCoord":building['properties']['YCoord'],
+				'LandUse':building['properties']['LandUse'],
+				"type":"Feature",
+				"geometry":building['geometry'],
+				"properties":{
+					'NumFloors':building['properties']['NumFloors'],
+					'LandUse':building['properties']['LandUse'],
+					'OBJECTID':building['properties']['OBJECTID'],
+				}
+			}
+			result = db.nyc.update_one(key, {"$set": feature}, upsert=True)
+
+		offset = offset+2000
+		print offset
+		scraper(offset)
+
+scraper(offset)

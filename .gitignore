@@ -6,6 +6,7 @@ dist/OSMBuildings/*
 dist/OSMBuildings*
 tile/*
 ec2
+backup/*
 blocmaps.zip
 
 src/Shaders.min.js

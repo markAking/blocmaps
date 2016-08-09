@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blocmaps</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="/styles/blocmaps.css">
+  <script src="/src/color2color.min.js"></script>
+  <script src="/src/jquery.min.js"></script>
+  <script src="/src/OSMBuildings.js"></script>
+</head>
+
+<body>
+<header>
+  <div>
+    <div class="wrapper">
+      <a id="logo" href="http://blocpower.us">
+        <img class="default" src="https://s3.amazonaws.com/marketplace.production-assets.blocpower.us/wp-content/uploads/2015/07/27170555/logo-blocpower1.png" alt="Blocpower">
+      </a>
+      <nav id="main-menu">
+        <ul class="top-menu">
+          <li><a href="/">NYC</a></li>
+          <li class="selected"><a href="/rochester">Rochester</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+<div id="map"></div>
+
+
+<div class="map_controls floaters">
+
+  <div class="control tilt">
+    <button class="dec">&#8601;</button>
+    <button class="inc">&#8599;</button>
+  </div>
+
+  <div class="control rotation">
+    <button class="inc">&#8630;</button>
+    <button class="dec">&#8631;</button>
+  </div>
+
+  <div class="control zoom">
+    <button class="dec">-</button>
+    <button class="inc">+</button>
+  </div>
+
+  <div class="heatindex">
+    <div class="temp">
+      <div class="high">300000</div>
+      <div class="low">20000</div>
+    </div>
+  </div>
+</div>
+
+<div id="details" class="floaters">
+  <div>
+    <h2>Property Details</h2>
+    <button class='close_details'>Close</button>
+  </div>
+  <div class="detail_container">
+    <table id="detail_list"></table>
+  </div>
+</div>
+<script>
+  // SET temperature //
+
+  // START map //
+  var map = new GLMap('map', {
+    position: { latitude:43.15729, longitude:-77.61521 },
+    bounds: { n:-77.701632, e:43.103318, s:-77.531374, w:43.267614 },
+    zoom: 16,
+    tilt: 30.0,
+    minZoom: 12,
+    maxZoom: 20,
+    // disabled: true, // disables user input
+    state: true // stores map position, zoom etc. in url
+  });
+
+  //***************************************************************************
+
+  var osmb = new OSMBuildings({
+    baseURL: '/styles',
+    minZoom: 12,
+    maxZoom: 22,
+    showBackfaces: false, 
+    fastMode: true,
+    effects: ['shadows'],
+    attribution: '© 3D <a href="https://osmbuildings.org/copyright/">OSM Buildings</a>'
+  }).addTo(map);
+
+  osmb.addMapTiles(
+    'https://{s}.tiles.mapbox.com/v3/osmbuildings.kbpalbpk/{z}/{x}/{y}.png',
+    {
+      attribution: '© Data <a href="http://openstreetmap.org/copyright/">OpenStreetMap</a> · © Map <a href="http://mapbox.com">Mapbox</a>'
+    }
+  );
+
+  var selector = function(id, data) {
+    return id % 2 === 0;
+  };
+
+  function showEven(duration) {
+    osmb.show(selector, duration || 1000);
+  }
+
+  function hideEven(duration) {
+    osmb.hide(selector, duration || 1000);
+  }
+
+  var colorByHeightAvailable = function(id, properties) {
+    if (!properties.levels && !properties.height) {
+      properties.color = "red";
+    } else if (!properties.height) {
+      properties.color = "lime";
+    } else {
+      properties.color = "green";
+    }
+    
+    properties.roofColor = properties.color;
+  };
+
+  var colorByHeight = function(id, properties) {
+    var height = parseFloat(properties.height) || (parseFloat(properties.levels)* 3.5) || 0;
+
+    if (height < 20)
+      properties.color = "#CCCCCC";
+    else if (height < 30)
+      properties.color = "purple";
+    else if (height < 60)
+      properties.color = "#CC4444";
+    else 
+      properties.color = "orange";
+      
+    properties.roofColor = properties.color;
+  };
+
+  var mapSetup = function(id, properties) {
+    //age = 2016-parseFloat(properties.YearBuilt);
+    var ped = Math.ceil(parseFloat(properties.ped_energy));
+    var min = 20000;
+    var max = 300000;
+    var percentage = (ped - min) / (max - min);
+    var h = Math.ceil( (1.0 - percentage) * 150 );
+    properties.height = parseFloat(properties.NumFloors )* 3.5;
+
+    if(isNaN(h)){
+      var color = "#CCC";
+    } else {
+      var color = color2color( "hsl("+h+",100%,50%)" );
+    }
+    properties.color = color;
+    properties.roofColor = properties.color;
+  };
+  
+  // osmb.addGeoJSONTiles('https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json',{
+  //   modifier: colorByHeight,
+  //   color: '#CCCCCC'
+  // });
+
+  osmb.addGeoJSONTiles('/tile/{z}/{x}/{y}.json', {modifier: mapSetup});
+
+  var label = document.getElementById('label');
+  map.on('change', function() {
+
+    var pos = osmb.project(52.52, 13.37, 50);
+    label.style.left = Math.round(pos.x) + 'px';
+    label.style.top = Math.round(pos.y) + 'px';
+  });
+
+  map.on('pointermove', function(e) {
+    osmb.getTarget(e.detail.x, e.detail.y, function(id) {
+      if (id) {
+        document.body.style.cursor = 'pointer';
+        osmb.highlight(id, '#f08000');
+      } else {
+        document.body.style.cursor = 'default';
+        osmb.highlight(null);
+      }
+   });
+  });
+
+//  map.on('pointermove', function(e) {
+//    obj.position = osmb.unproject(e.detail.x, e.detail.y);
+//  });
+//
+
+  $('.close_details').on('click', function(e){ $('#details').hide(); });
+
+  map.on('pointerdown', function(e) {
+    //console.log(e)
+    var id = osmb.getTarget(e.detail.x, e.detail.y, function(id) {
+      console.log(id)
+      if(id != null){
+        $.post("/rochester_detail", {"id": id})
+        .done(function(response) {
+          $('#detail_list').empty();
+          for (var key in response){
+            $('#detail_list').append('<tr><td>'+key+'</td><td>'+response[key]+'</td></tr>');
+          }
+          $('#details').show();
+        });
+      }
+    });
+  });
+
+  //*************************************************************************
+
+  //  osmb.on('idle', function() {
+  //    console.log('IDLE');
+  //  });
+  //
+  //  osmb.on('busy', function() {
+  //    console.log('BUSY');
+  //  });
+
+  //*************************************************************************
+
+  /*
+   * ## Key codes for object positioning ##
+   * Cursor keys: move
+   * +/- : scale
+   * w/s : elevate
+   * a/d : rotate
+   *
+   * Pressing Alt the same time accelerates
+   */
+  function positionOnMap(obj) {
+    document.addEventListener('keydown', function(e) {
+      var transInc = e.altKey ? 0.0002 : 0.00002;
+      var scaleInc = e.altKey ? 0.1 : 0.01;
+      var rotaInc = e.altKey ? 10 : 1;
+      var eleInc = e.altKey ? 10 : 1;
+
+      switch (e.which) {
+        case 37: obj.position.longitude -= transInc; break;
+        case 39: obj.position.longitude += transInc; break;
+        case 38: obj.position.latitude += transInc; break;
+        case 40: obj.position.latitude -= transInc; break;
+        case 187: obj.scale += scaleInc; break;
+        case 189: obj.scale -= scaleInc; break;
+        case 65: obj.rotation += rotaInc; break;
+        case 68: obj.rotation -= rotaInc; break;
+        case 87: obj.elevation += eleInc; break;
+        case 83: obj.elevation -= eleInc; break;
+        default: return;
+      }
+      console.log(JSON.stringify({
+        position:{
+          latitude:parseFloat(obj.position.latitude.toFixed(5)),
+          longitude:parseFloat(obj.position.longitude.toFixed(5))
+        },
+        elevation:parseFloat(obj.elevation.toFixed(2)),
+        scale:parseFloat(obj.scale.toFixed(2)),
+        rotation:parseInt(obj.rotation, 10)
+      }));
+    });
+  }
+
+  //*************************************************************************
+
+  if (typeof obj !== 'undefined') positionOnMap(obj);
+
+  var controlButtons = document.querySelectorAll('.control button');
+
+  for (var i = 0, il = controlButtons.length; i < il; i++) {
+    controlButtons[i].addEventListener('click', function(e) {
+      var button = this;
+      var parentClassList = button.parentNode.classList;
+      var direction = button.classList.contains('inc') ? 1 : -1;
+      var increment;
+      var property;
+
+      if (parentClassList.contains('tilt')) {
+        property = 'Tilt';
+        increment = direction*10;
+      }
+      if (parentClassList.contains('rotation')) {
+        property = 'Rotation';
+        increment = direction*10;
+      }
+      if (parentClassList.contains('zoom')) {
+        property = 'Zoom';
+        increment = direction*1;
+      }
+      if (property) {
+        map['set'+ property](map['get'+ property]()+increment);
+      }
+    });
+  }
+</script>
+</body>
+</html>

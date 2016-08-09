@@ -211,8 +211,13 @@ from sklearn.cross_validation import train_test_split
 #data=pd.read_csv("../data/pluto/BX.csv",low_memory=False)
 #data=pd.read_csv("../data/pluto/MN.csv",low_memory=False)
 #data=pd.read_csv("../data/pluto/QN.csv",low_memory=False)
-data=pd.read_csv("../data/pluto/SI.csv",low_memory=False)
-#data=pd.concat((data_1,data_2,data_3,data_4,data_5),axis=0)
+#data=pd.read_csv("../data/pluto/SI.csv",low_memory=False)
+data_1=pd.read_csv("../data/pluto/BK.csv",low_memory=False)
+data_2=pd.read_csv("../data/pluto/BX.csv",low_memory=False)
+data_3=pd.read_csv("../data/pluto/MN.csv",low_memory=False)
+data_4=pd.read_csv("../data/pluto/QN.csv",low_memory=False)
+data_5=pd.read_csv("../data/pluto/SI.csv",low_memory=False)
+data=pd.concat((data_1,data_2,data_3,data_4,data_5),axis=0)
 data.head()
 data_pred=data.loc[:,["LandUse","LotArea",'YearBuilt','NumFloors','XCoord','YCoord']]
 data_pred=data_pred.dropna()
@@ -222,7 +227,7 @@ data_pred.loc[:,"age"]=data_pred.YearBuilt.apply(lambda x:2016-x)
 data_pred.columns
 
 dd=data_pred.loc[:,["LandUse","age","NumFloors","LotArea","XCoord","YCoord"]]
-ddd=dd[dd.LandUse==5]
+ddd=dd[dd.LandUse==2]
 ddd.index=range(len(ddd))
 
 X_feature=ddd.loc[:,["age","NumFloors","LotArea"]]
@@ -233,40 +238,90 @@ ddd.loc[:,"ped_energy"]=lm.predict(X_feature)
 ddd=ddd[(ddd.ped_energy<300000)&(ddd.ped_energy>20000)]
 ddd.index=range(len(ddd))
 
-import urllib2
-import sys, os
+print len(ddd)
+
 import json
-from pandas.io.json import json_normalize
-from pprint import pprint
-import pymongo
-from pymongo import MongoClient
+import sys, os
 import math
 from math import pi,cos,sin,log,exp,atan
+import pymongo
+from pymongo import MongoClient
+import shutil
 
 zoom = 15
+tile_size = 256
+bbox=(-74.2533588736031,40.4989409997375,-73.6994027507486,40.9113726506172)
+DEG_TO_RAD = pi/180
+RAD_TO_DEG = 180/pi
 
-def long2tile(lon):
-	return int((lon+180)/360*math.pow(2,zoom))
+def minmax (a,b,c):
+    a = max(a,b)
+    a = min(a,c)
+    return a
 
-def lat2tile(lat):
-	return int((1-math.log(math.tan(lat*math.pi/180) + 1/math.cos(lat*math.pi/180))/math.pi)/2 *math.pow(2,zoom))
+class GoogleProjection:
+    def __init__(self,levels=18):
+        self.Bc = []
+        self.Cc = []
+        self.zc = []
+        self.Ac = []
+        c = 256
+        for d in range(0,levels):
+            e = c/2;
+            self.Bc.append(c/360.0)
+            self.Cc.append(c/(2 * pi))
+            self.zc.append((e,e))
+            self.Ac.append(c)
+            c *= 2
+                
+    def fromLLtoPixel(self,ll,zoom):
+        d = self.zc[zoom]
+        e = round(d[0] + ll[0] * self.Bc[zoom])
+        f = minmax(sin(DEG_TO_RAD * ll[1]),-0.9999,0.9999)
+        g = round(d[1] + 0.5*log((1+f)/(1-f))*-self.Cc[zoom])
+        return (e,g)
+     
+    def fromPixelToLL(self,px,zoom):
+        e = self.zc[zoom]
+        f = (px[0] - e[0])/self.Bc[zoom]
+        g = (px[1] - e[1])/-self.Cc[zoom]
+        h = RAD_TO_DEG * ( 2 * atan(exp(g)) - 0.5 * pi)
+        return (f,h)
 
 client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
 db = client['blocmaps']
 
-with open('../data/landuse_05.json') as data_file:    
-	curdata = json.load(data_file)
 
-	for prop in curdata['features']:
-		ped = ddd.loc[(ddd["XCoord"] == prop['properties']['XCoord']) & (ddd["YCoord"] == prop['properties']['YCoord']), "ped_energy"].values
-		ped = str(ped).strip('[]')
-		if ped:
-			print ped
-			prop['properties'][u'ped_energy'] = ped
+def render_tiles(maxZoom=20):
+    gprj = GoogleProjection(maxZoom+1) 
+    ll0 = (bbox[0],bbox[3])
+    ll1 = (bbox[2],bbox[1])
 
-			key = {'_id':prop['id']}
-			feature = {
-				"properties":prop['properties']
-			}
-			result = db.nyc.update_one(key, {"$set": feature}, upsert=True)
+    px0 = gprj.fromLLtoPixel(ll0,zoom)
+    px1 = gprj.fromLLtoPixel(ll1,zoom)
+    #print range(int(px0[0]/256.0),int(px1[0]/256.0)+1)  
+    #for x in range(9625,9626):  
+    for x in range(int(px0[0]/256.0),int(px1[0]/256.0)+1):
+        if (x < 0) or (x >= 2**zoom):
+            continue
 
+        tile_x = "%s" % x
+        records = db.nyc.count({"tile_x": x, "LandUse":"02"})
+        print records
+        if records > 1:
+            tiles = db.nyc.find({"tile_x": x, "LandUse":"02"})
+            for tile in tiles:
+                if tile['properties'].has_key('ped_energy'):
+                    continue
+                ped = ddd.loc[(ddd["XCoord"] == tile['XCoord']) & (ddd["YCoord"] == tile['YCoord']), "ped_energy"].values
+                ped = str(ped).strip('[]')
+                if ped:
+                    #print ped
+                    tile['properties'][u'ped_energy'] = ped
+                    key = {'_id':tile['_id']}
+                    feature = {
+                        "properties":tile['properties']
+                    }
+                    result = db.nyc.update_one(key, {"$set": feature}, upsert=True)
+
+render_tiles()

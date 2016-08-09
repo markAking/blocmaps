@@ -62,20 +62,22 @@ def render_tiles(maxZoom=20):
 	if not os.path.isdir('../tile/15'):
 		os.mkdir('../tile/15')
 
-	#for x in range(9625,9650):
 	for x in range(int(px0[0]/256.0),int(px1[0]/256.0)+1):
 		if (x < 0) or (x >= 2**zoom):
 			continue
 		tile_x = "%s" % x
-		records = db.nyc.count({"tile_x": x})
-		print records
-		if records > 1:
-			tiles = db.nyc.find({"tile_x": x})
-			if not os.path.isdir('../tile/15/' + tile_x):
-				os.mkdir('../tile/15/' + tile_x)
-			for tile in tiles:
-				tile_y = str(tile['tile_y'])
 
+		if not os.path.isdir('../tile/15/' + tile_x):
+			os.mkdir('../tile/15/' + tile_x)
+
+		for y in range(int(px0[1]/256.0),int(px1[1]/256.0)+1):
+			if (y < 0) or (y >= 2**zoom):
+				continue
+			tile_y = "%s" % y
+
+			records = db.nyc.count({"tile_x": x, "tile_y": y})
+			if records > 1:
+				print records
 				if not os.path.isfile('../tile/15/'+ tile_x + '/' + tile_y + '.json'):
 					with open('../data/tile.json') as tile_template:
 						tile_data = json.load(tile_template)
@@ -83,20 +85,23 @@ def render_tiles(maxZoom=20):
 					with open('../tile/15/'+ tile_x + '/' + tile_y + '.json') as data_file:
 						tile_data = json.load(data_file)
 
-				
-				#Clean up properties for tiles
-				if tile['properties'].has_key('ped_energy'):
-					tile['properties'] = {
-						'ped_energy':tile['properties']['ped_energy'],
-						'NumFloors':tile['properties']['NumFloors'],
-					}
-				else:
-					tile['properties'] = {
-						'NumFloors':tile['properties']['NumFloors'],
-					}
+				tiles = db.nyc.find({"tile_x": x, "tile_y": y})
+			
+				for tile in tiles:
+					#Clean up properties for tiles
+					if tile['properties'].has_key('ped_energy'):
+						tile['properties'] = {
+							'ped_energy':tile['properties']['ped_energy'],
+							'NumFloors':tile['properties']['NumFloors'],
+						}
+					else:
+						tile['properties'] = {
+							'NumFloors':tile['properties']['NumFloors'],
+						}
 
-				tile[u'id']=tile['_id']
-				tile_data['features'].append(tile)
+					tile[u'id']=tile['_id']
+					tile_data['features'].append(tile)
+
 				with open('../tile/15/'+ tile_x + '/' + tile_y + '.json', 'w') as outfile:
 					json.dump(tile_data, outfile)
 
@@ -105,6 +110,6 @@ def render_tiles(maxZoom=20):
 #tiles = db.nyc.find({"tile_x": 9625})
 #for tile in tiles:
 #	print tile['tile_y']
-if os.path.isdir('../tile/15'):
-	shutil.rmtree('../tile/15')
+#if os.path.isdir('../tile/15'):
+#	shutil.rmtree('../tile/15')
 render_tiles()
