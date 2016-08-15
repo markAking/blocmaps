@@ -87,7 +87,7 @@
     showBackfaces: false, 
     fastMode: true,
     effects: ['shadows'],
-    attribution: '© 3D <a href="https://osmbuildings.org/copyright/">OSM Buildings</a>'
+    attribution: ''
   }).addTo(map);
 
   osmb.addMapTiles(
@@ -96,45 +96,6 @@
       attribution: '© Data <a href="http://openstreetmap.org/copyright/">OpenStreetMap</a> · © Map <a href="http://mapbox.com">Mapbox</a>'
     }
   );
-
-  var selector = function(id, data) {
-    return id % 2 === 0;
-  };
-
-  function showEven(duration) {
-    osmb.show(selector, duration || 1000);
-  }
-
-  function hideEven(duration) {
-    osmb.hide(selector, duration || 1000);
-  }
-
-  var colorByHeightAvailable = function(id, properties) {
-    if (!properties.levels && !properties.height) {
-      properties.color = "red";
-    } else if (!properties.height) {
-      properties.color = "lime";
-    } else {
-      properties.color = "green";
-    }
-    
-    properties.roofColor = properties.color;
-  };
-
-  var colorByHeight = function(id, properties) {
-    var height = parseFloat(properties.height) || (parseFloat(properties.levels)* 3.5) || 0;
-
-    if (height < 20)
-      properties.color = "#CCCCCC";
-    else if (height < 30)
-      properties.color = "purple";
-    else if (height < 60)
-      properties.color = "#CC4444";
-    else 
-      properties.color = "orange";
-      
-    properties.roofColor = properties.color;
-  };
 
   var mapSetup = function(id, properties) {
     //age = 2016-parseFloat(properties.YearBuilt);
@@ -154,20 +115,7 @@
     properties.roofColor = properties.color;
   };
   
-  // osmb.addGeoJSONTiles('https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json',{
-  //   modifier: colorByHeight,
-  //   color: '#CCCCCC'
-  // });
-
   osmb.addGeoJSONTiles('/tile/{z}/{x}/{y}.json', {modifier: mapSetup});
-
-  var label = document.getElementById('label');
-  map.on('change', function() {
-
-    var pos = osmb.project(52.52, 13.37, 50);
-    label.style.left = Math.round(pos.x) + 'px';
-    label.style.top = Math.round(pos.y) + 'px';
-  });
 
   map.on('pointermove', function(e) {
     osmb.getTarget(e.detail.x, e.detail.y, function(id) {
@@ -180,11 +128,6 @@
       }
    });
   });
-
-//  map.on('pointermove', function(e) {
-//    obj.position = osmb.unproject(e.detail.x, e.detail.y);
-//  });
-//
 
   $('.close_details').on('click', function(e){ $('#details').hide(); });
 
@@ -203,18 +146,6 @@
       }
     });
   });
-
-  //*************************************************************************
-
-  //  osmb.on('idle', function() {
-  //    console.log('IDLE');
-  //  });
-  //
-  //  osmb.on('busy', function() {
-  //    console.log('BUSY');
-  //  });
-
-  //*************************************************************************
 
   /*
    * ## Key codes for object positioning ##

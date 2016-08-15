@@ -2,8 +2,7 @@
 .idea
 _scratch
 node_modules
-dist/OSMBuildings/*
-dist/OSMBuildings*
+dist
 tile/*
 ec2
 backup/*
@@ -12,7 +11,7 @@ blocmaps.zip
 src/Shaders.min.js
 lib/GLX.debug.js
 
-build/temp
+build
 
 # backup files
 *~
