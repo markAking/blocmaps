@@ -102,7 +102,6 @@ def scraper(offset):
 				"tile_y":lat2tile(lat),
 				"XCoord":building['properties']['XCoord'],
 				"YCoord":building['properties']['YCoord'],
-				'LandUse':building['properties']['LandUse'],
 				"type":"Feature",
 				"geometry":building['geometry'],
 				"properties":{

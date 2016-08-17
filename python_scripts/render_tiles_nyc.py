@@ -4,7 +4,6 @@ import math
 from math import pi,cos,sin,log,exp,atan
 import pymongo
 from pymongo import MongoClient
-import shutil
 
 zoom = 15
 tile_size = 256
@@ -78,38 +77,16 @@ def render_tiles(maxZoom=20):
 			records = db.nyc.count({"tile_x": x, "tile_y": y})
 			if records > 1:
 				print records
-				if not os.path.isfile('../tile/15/'+ tile_x + '/' + tile_y + '.json'):
-					with open('../data/tile.json') as tile_template:
-						tile_data = json.load(tile_template)
-				else:
-					with open('../tile/15/'+ tile_x + '/' + tile_y + '.json') as data_file:
-						tile_data = json.load(data_file)
+				with open('../data/tile.json') as tile_template:
+					tile_data = json.load(tile_template)
 
 				tiles = db.nyc.find({"tile_x": x, "tile_y": y})
 			
 				for tile in tiles:
-					#Clean up properties for tiles
-					if tile['properties'].has_key('ped_energy'):
-						tile['properties'] = {
-							'ped_energy':tile['properties']['ped_energy'],
-							'NumFloors':tile['properties']['NumFloors'],
-						}
-					else:
-						tile['properties'] = {
-							'NumFloors':tile['properties']['NumFloors'],
-						}
-
 					tile[u'id']=tile['_id']
 					tile_data['features'].append(tile)
 
 				with open('../tile/15/'+ tile_x + '/' + tile_y + '.json', 'w') as outfile:
 					json.dump(tile_data, outfile)
 
-
-
-#tiles = db.nyc.find({"tile_x": 9625})
-#for tile in tiles:
-#	print tile['tile_y']
-#if os.path.isdir('../tile/15'):
-#	shutil.rmtree('../tile/15')
 render_tiles()

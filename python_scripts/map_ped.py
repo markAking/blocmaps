@@ -207,11 +207,7 @@ from sklearn import linear_model
 from sklearn.cross_validation import cross_val_score
 from sklearn.cross_validation import train_test_split
 
-#data=pd.read_csv("../data/pluto/BK.csv",low_memory=False)
-#data=pd.read_csv("../data/pluto/BX.csv",low_memory=False)
-#data=pd.read_csv("../data/pluto/MN.csv",low_memory=False)
-#data=pd.read_csv("../data/pluto/QN.csv",low_memory=False)
-#data=pd.read_csv("../data/pluto/SI.csv",low_memory=False)
+
 data_1=pd.read_csv("../data/pluto/BK.csv",low_memory=False)
 data_2=pd.read_csv("../data/pluto/BX.csv",low_memory=False)
 data_3=pd.read_csv("../data/pluto/MN.csv",low_memory=False)
@@ -219,15 +215,15 @@ data_4=pd.read_csv("../data/pluto/QN.csv",low_memory=False)
 data_5=pd.read_csv("../data/pluto/SI.csv",low_memory=False)
 data=pd.concat((data_1,data_2,data_3,data_4,data_5),axis=0)
 data.head()
-data_pred=data.loc[:,["LandUse","LotArea",'YearBuilt','NumFloors','XCoord','YCoord']]
+data_pred=data.loc[:,["LandUse","LotArea",'YearBuilt','NumFloors','XCoord','YCoord',"BBL"]]
 data_pred=data_pred.dropna()
 data_pred=data_pred[data_pred.YearBuilt!=0]
 data_pred.index=range(len(data_pred))
 data_pred.loc[:,"age"]=data_pred.YearBuilt.apply(lambda x:2016-x)
 data_pred.columns
 
-dd=data_pred.loc[:,["LandUse","age","NumFloors","LotArea","XCoord","YCoord"]]
-ddd=dd[dd.LandUse==2]
+dd=data_pred.loc[:,["LandUse","age","NumFloors","LotArea","XCoord","YCoord","BBL"]]
+ddd=dd[dd.LandUse==5]
 ddd.index=range(len(ddd))
 
 X_feature=ddd.loc[:,["age","NumFloors","LotArea"]]
@@ -306,22 +302,26 @@ def render_tiles(maxZoom=20):
             continue
 
         tile_x = "%s" % x
-        records = db.nyc.count({"tile_x": x, "LandUse":"02"})
+        records = db.nyc.count({"tile_x": x, "LandUse":"05"})
         print records
         if records > 1:
-            tiles = db.nyc.find({"tile_x": x, "LandUse":"02"})
+            tiles = db.nyc.find({"tile_x": x, "LandUse":"05"})
             for tile in tiles:
                 if tile['properties'].has_key('ped_energy'):
                     continue
                 ped = ddd.loc[(ddd["XCoord"] == tile['XCoord']) & (ddd["YCoord"] == tile['YCoord']), "ped_energy"].values
-                ped = str(ped).strip('[]')
+                bbl = ddd.loc[(ddd["XCoord"] == tile['XCoord']) & (ddd["YCoord"] == tile['YCoord']), "BBL"].values
+
+                key = {'_id':tile['_id']}
+                feature = {
+                    "bbl": str(bbl[0])
+                }
                 if ped:
-                    #print ped
-                    tile['properties'][u'ped_energy'] = ped
-                    key = {'_id':tile['_id']}
                     feature = {
-                        "properties":tile['properties']
+                        "bbl": str(bbl[0]),
+                        "properties.ped_energy": str(ped[0])
                     }
-                    result = db.nyc.update_one(key, {"$set": feature}, upsert=True)
+
+                db.nyc.update_one(key, {"$set": feature})
 
 render_tiles()
