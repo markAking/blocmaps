@@ -88,5 +88,6 @@ def render_tiles(maxZoom=20):
 
 				with open('../tile/15/'+ tile_x + '/' + tile_y + '.json', 'w') as outfile:
 					json.dump(tile_data, outfile)
+				print tile_y
 
 render_tiles()

@@ -29,23 +29,7 @@
 <div id="map"></div>
 
 
-<div class="map_controls floaters">
-
-  <div class="control tilt">
-    <button class="dec">&#8601;</button>
-    <button class="inc">&#8599;</button>
-  </div>
-
-  <div class="control rotation">
-    <button class="inc">&#8630;</button>
-    <button class="dec">&#8631;</button>
-  </div>
-
-  <div class="control zoom">
-    <button class="dec">-</button>
-    <button class="inc">+</button>
-  </div>
-
+<div class="map_legend">
   <div class="heatindex">
     <div class="temp">
       <div class="high">300000</div>
@@ -54,7 +38,7 @@
   </div>
 </div>
 
-<div id="details" class="floaters">
+<div id="details">
   <div>
     <h2>Property Details</h2>
     <button class='close_details'>Close</button>
@@ -188,37 +172,7 @@
     });
   }
 
-  //*************************************************************************
-
   if (typeof obj !== 'undefined') positionOnMap(obj);
-
-  var controlButtons = document.querySelectorAll('.control button');
-
-  for (var i = 0, il = controlButtons.length; i < il; i++) {
-    controlButtons[i].addEventListener('click', function(e) {
-      var button = this;
-      var parentClassList = button.parentNode.classList;
-      var direction = button.classList.contains('inc') ? 1 : -1;
-      var increment;
-      var property;
-
-      if (parentClassList.contains('tilt')) {
-        property = 'Tilt';
-        increment = direction*10;
-      }
-      if (parentClassList.contains('rotation')) {
-        property = 'Rotation';
-        increment = direction*10;
-      }
-      if (parentClassList.contains('zoom')) {
-        property = 'Zoom';
-        increment = direction*1;
-      }
-      if (property) {
-        map['set'+ property](map['get'+ property]()+increment);
-      }
-    });
-  }
 </script>
 </body>
 </html>
