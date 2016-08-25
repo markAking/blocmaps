@@ -50,15 +50,15 @@ conf = {
 	},
 	'/styles': {
 		'tools.staticdir.on': True,
-		'tools.staticdir.dir': os.path.join(current_dir, 'styles')
+		'tools.staticdir.dir': os.path.join(current_dir, 'static/styles')
 	},
 	'/src': {
 		'tools.staticdir.on': True,
-		'tools.staticdir.dir': os.path.join(current_dir, 'src')
+		'tools.staticdir.dir': os.path.join(current_dir, 'static/src')
 	},
 	'/tile': {
 		'tools.staticdir.on': True,
-		'tools.staticdir.dir': os.path.join(current_dir, 'tile')
+		'tools.staticdir.dir': os.path.join(current_dir, 'static/tile')
 	},
 }
 
@@ -73,7 +73,7 @@ def arcgis_rochester(building_id):
 	return json.load(response)
 
 def openMongo():
-	client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
+	client = MongoClient("mongodb://blocpower:h3s.w8^8@ds013916.mlab.com:13916/blocmaps")
 	return client['blocmaps']
 
 class Root(object):
@@ -99,6 +99,10 @@ class Building_Detail(object):
 		for document in cursor:
 			if document['properties'].has_key('ped_energy'):
 				data['features'][0]['properties'][u'ped_energy'] = document['properties']['ped_energy']
+
+			if document['properties'].has_key('ecm'):
+				data['features'][0]['properties'][u'ecm'] = document['properties']['ecm']
+				
 			return json.dumps(data['features'][0]['properties'])
 
 class Rochester_Detail(object):

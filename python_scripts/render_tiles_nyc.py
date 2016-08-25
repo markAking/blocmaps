@@ -45,7 +45,7 @@ class GoogleProjection:
 		h = RAD_TO_DEG * ( 2 * atan(exp(g)) - 0.5 * pi)
 		return (f,h)
 
-client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
+client = MongoClient("mongodb://blocpower:h3s.w8^8@ds013916.mlab.com:13916/blocmaps")
 db = client['blocmaps']
 
 def render_tiles(maxZoom=20):
@@ -56,18 +56,18 @@ def render_tiles(maxZoom=20):
 	px0 = gprj.fromLLtoPixel(ll0,zoom)
 	px1 = gprj.fromLLtoPixel(ll1,zoom)
 	
-	if not os.path.isdir('../tile'):
-		os.mkdir('../tile')
-	if not os.path.isdir('../tile/15'):
-		os.mkdir('../tile/15')
+	if not os.path.isdir('../static/tile'):
+		os.mkdir('../static/tile')
+	if not os.path.isdir('../static/tile/15'):
+		os.mkdir('../static/tile/15')
 
 	for x in range(int(px0[0]/256.0),int(px1[0]/256.0)+1):
 		if (x < 0) or (x >= 2**zoom):
 			continue
 		tile_x = "%s" % x
 
-		if not os.path.isdir('../tile/15/' + tile_x):
-			os.mkdir('../tile/15/' + tile_x)
+		if not os.path.isdir('../static/tile/15/' + tile_x):
+			os.mkdir('../static/tile/15/' + tile_x)
 
 		for y in range(int(px0[1]/256.0),int(px1[1]/256.0)+1):
 			if (y < 0) or (y >= 2**zoom):
@@ -86,7 +86,7 @@ def render_tiles(maxZoom=20):
 					tile[u'id']=tile['_id']
 					tile_data['features'].append(tile)
 
-				with open('../tile/15/'+ tile_x + '/' + tile_y + '.json', 'w') as outfile:
+				with open('../static/tile/15/'+ tile_x + '/' + tile_y + '.json', 'w') as outfile:
 					json.dump(tile_data, outfile)
 				print tile_y
 

@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"geometry": {"type": "Polygon", "coordinates": [[[-77.658599, 43.103487, 0], [-77.661762, 43.10507, 0], [-77.661832, 43.104939, 0], [-77.658913, 43.103478, 0], [-77.658599, 43.103487, 0]]]}, "id": 29589, "_id": 29589, "type": "Feature", "properties": {"NumFloors": 2.5}, "tile_y": 12027, "tile_x": 9315}]}

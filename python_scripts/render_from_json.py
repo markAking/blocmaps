@@ -46,7 +46,7 @@ class GoogleProjection:
 		h = RAD_TO_DEG * ( 2 * atan(exp(g)) - 0.5 * pi)
 		return (f,h)
 
-client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
+client = MongoClient("mongodb://blocpower:h3s.w8^8@ds013916.mlab.com:13916/blocmaps")
 db = client['blocmaps']
 
 with open('../backup/rochester_ped.json') as tile_template:

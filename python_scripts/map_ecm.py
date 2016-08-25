@@ -76,7 +76,7 @@ data_ecm = pd.read_csv("../data/type_TRC_bbl.csv")
 data_ecm.drop(data_ecm.columns[[0]], axis=1, inplace=True)
 prev_bbl= 0
 
-client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
+client = MongoClient("mongodb://blocpower:h3s.w8^8@ds013916.mlab.com:13916/blocmaps")
 db = client['blocmaps']
 building = False
 ecm = []

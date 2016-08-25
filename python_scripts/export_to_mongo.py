@@ -76,7 +76,7 @@ def render_tiles(maxZoom=20):
 
 
 offset = 0
-client = MongoClient("mongodb://blocpower:h3s.w8^8@ds015325.mlab.com:15325/blocmaps")
+client = MongoClient("mongodb://blocpower:h3s.w8^8@ds013916.mlab.com:13916/blocmaps")
 db = client['blocmaps']
 
 def scraper(offset):
