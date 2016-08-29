@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blocmaps</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="/static/styles/blocmaps.css">
+  <script src="/static/src/color2color.min.js"></script>
+  <script src="/static/src/jquery.min.js"></script>
+  <script src="/static/src/OSMBuildings.js"></script>
+  <script src="/static/src/blocmaps.js"></script>
+</head>
+<body>
+<header>
+    <div>
+      <div class="wrapper">
+        <a id="logo" href="http://blocpower.us">
+          <img class="default" src="https://s3.amazonaws.com/marketplace.production-assets.blocpower.us/wp-content/uploads/2015/07/27170555/logo-blocpower1.png" alt="Blocpower">
+        </a>
+        <div class="selectType">
+          <label>Building Type</label>
+          <select id="selectType">
+            <option value="00">All</option>
+            <option value="01">Type 01: One & Two Family</option>
+            <option value="02">Type 02: Multi-Family Walk-Up</option>
+            <option value="03">Type 03: Multi-Family Elevator</option>
+            <option value="04">Type 04: Mixed Residential and Commercial</option>
+            <option value="05">Type 05: Commercial and Office</option>
+            <option value="06">Type 06: Industrial and Manufacturing</option>
+            <option value="07">Type 07: Transportation and Utility</option>
+            <option value="08">Type 08: Public Facilities and Institution</option>
+          </select>
+        </div>
+        <nav id="main-menu">
+          <ul class="top-menu">
+            <li class="selected"><a href="/">NYC</a></li>
+            <li><a href="/rochester">Rochester</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+  <div id="map"></div>
+
+
+  <div class="map_legend">
+    <div class="high">Very Inefficient</div>
+    <div class="temp"><div class="current_pointer">current selection</div></div>
+    <div class="low">Very Effiencient</div>
+  </div>
+
+  <div id="details">
+    <div class='buildingType'>
+      <p></p>
+      <button class='close_details'>X</button>
+    </div>
+    <div class='container address'>
+      <h2></h2>
+      <h3></h3>
+    </div>
+    <div class='container ped'>
+      <h2>Projected Energy Consumption</h2>
+      <h3>20,000<span>kwh</span></h3>
+      <p>Type <span>33% less efficient</span> than similar buildings in this area.</p>
+    </div>
+    <div class='container ecm'>
+      <h2>Energy Consumption Measures</h2>
+      <p>ECM's are the recommended energy saving measures this building can take in order to dramatically conserve energy.</p>
+      <div class="ecm_data">
+        <ul></ul>
+        <p>We can help retrofit this building, just drop us a line!</p>
+        <a href="mailto:info@blocpower.org">Contact Blocpower</a>
+      </div>
+      <div class='ecm_no_data'>
+        <p>We haven't generated any ECM's for this building yet, but we can. if you're the owner or manager of this building email us at <a href="mailto:info@blocpower.org">info@blocpower.org</a>
+      </div>
+    </div>
+    <div class="container building_detail">
+      <h2>Building Details</h2>
+      <table class="detail_list"></table>
+    </div>
+    <div class="isItYours"><p>Do you manage or own this building?</p></div>
+  </div>
+  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewbox="0 0 40 145">
+    <mask id="arrowmask">
+        <image id="img" xlink:href="/static/styles/nrg_arrow.png" x="0" y="0" height="40px" width="145px" />
+    </mask>
+  </svg>
+  <script>
+    var buildingType = '00';
+
+    // START map //
+    var map = new GLMap('map', {
+      position: { latitude:40.709528, longitude:-74.000632 },
+      bounds: { n:-74.2533588736031, e:40.4989409997375, s:-73.6994027507486, w:40.9113726506172 },
+      zoom: 16,
+      tilt: 20.0,
+      minZoom: 12,
+      maxZoom: 20,
+      // disabled: true, // disables user input
+      state: true // stores map position, zoom etc. in url
+    });
+
+    var mapSetup = function(id, properties) {
+      //age = 2016-parseFloat(properties.YearBuilt);
+      if(buildingType == '00' || properties.LandUse == buildingType ){
+        properties.height = parseFloat(properties.NumFloors )* 3.5;
+        properties.color = pedColors(properties.ped_energy, 68);
+        properties.roofColor = properties.color;
+      } else {
+        properties.shape = 'none';
+        properties.height = -1;
+      }
+      
+    };
+
+    var osmb = new OSMBuildings({
+      baseURL: '/static/styles',
+      minZoom: 12,
+      maxZoom: 22,
+      showBackfaces: false, 
+      fastMode: true,
+      effects: ['shadows'],
+      attribution: ''
+    }).addTo(map);
+
+    osmb.addMapTiles(
+      'https://{s}.tiles.mapbox.com/v3/osmbuildings.kbpalbpk/{z}/{x}/{y}.png',
+      {
+        attribution: '© Data <a href="http://openstreetmap.org/copyright/">OpenStreetMap</a> · © Map <a href="http://mapbox.com">Mapbox</a>'
+      }
+    );
+
+    osmb.addGeoJSONTiles('/static/tile/{z}/{x}/{y}.json', {modifier: mapSetup});
+
+    function getBuildingList(id) {
+      return (id in buildings);
+    }
+    
+    osmb.on('loadfeature', function(e) {
+      var b = e.detail;
+      if(buildingType != '00' && b.properties.LandUse != buildingType){
+        var id =  b.id || b.properties.id;
+        if (id in buildings) {
+          buildings[id].push(b);
+        } else {
+          buildings[id] = [b];
+        }
+      }
+      osmb.hide(getBuildingList);
+    });
+
+    $("#selectType").on('change', function() {
+      buildingType = this.value;
+      buildings = [];
+      osmb.dataGrid.destroy();
+      osmb.addGeoJSONTiles('/static/tile/{z}/{x}/{y}.json', {modifier: mapSetup});
+    });
+
+    $('.close_details').on('click', function(e){ 
+      $('#details').removeClass('show'); 
+      $('.map_legend').removeClass('show');
+      $('.current_pointer').hide();
+    });
+
+    map.on('pointermove', function(e) {
+      osmb.getTarget(e.detail.x, e.detail.y, function(id) {
+        if (id) {
+          document.body.style.cursor = 'pointer';
+          osmb.highlight(id);
+        } else {
+          document.body.style.cursor = 'default';
+          osmb.highlight(null);
+        }
+     });
+    });
+
+    map.on('pointerdown', function(e) {
+      buildings = [];
+      var id = osmb.getTarget(e.detail.x, e.detail.y, function(id) {
+        if(id != null){
+          $.post("/nyc/building_detail/", {"id": id})
+          .done(function(response) {
+            var buildingType_text, 
+                borough,
+                ped_color;
+
+            //map.setPosition({latitude: e.detail.x, longitude: e.detail.y});
+            
+            switch(response['LandUse']){
+              case '01': buildingType_text = 'One & Two Family - Building Type 01';
+                break;
+              case '02': buildingType_text = 'Multi-Family Walk-Up - Building Type 02';
+                break;
+              case '03': buildingType_text = 'Multi-Family Elevator - Building Type 03';
+                break;
+              case '04': buildingType_text = 'Mixed Residential and Commercial - Building Type 04';
+                break;
+              case '05': buildingType_text = 'Commercial and Office - Building Type 05';
+                break;
+              case '06': buildingType_text = 'Industrial and Manufacturing - Building Type 06';
+                break;
+              case '07': buildingType_text = 'Transportation and Utility - Building Type 07';
+                break;
+              case '08': buildingType_text = 'Public Facilities and Institution - Building Type 08';
+                break;
+            }
+            switch(response['BoroCode']){
+              case 1: borough = 'Manhattan';
+                break;
+              case 2: borough = 'Bronx';
+                break;
+              case 3: borough = 'Brooklyn';
+                break;
+              case 4: borough = 'Queens';
+                break;
+              case 5: borough = 'Staten Island';
+                break;
+            }
+
+            $('.buildingType p').text(buildingType_text);
+            $('.address h2').text(response['Address']);
+            $('.address h3').text(borough+', NY '+response['ZipCode']);
+
+            if(response['ped_energy']){
+              ped_color = pedColors(response['ped_energy'], 40);
+              $('.current_pointer').show();
+              console.log(pedPercentage(response['ped_energy']))
+              $('.current_pointer').css({'background-color': ped_color, 'top':Math.ceil(385 - (pedPercentage(response['ped_energy']) * 400))+'px'})
+
+              $('.ped h3').html(numberWithCommas(response['ped_energy'])+'<span>kwh</span>').css('color', ped_color);
+              $('.ped p span').css('color', ped_color).text(Math.ceil(pedPercentage(response['ped_energy']) * 100)+'% less efficient');
+              $('.ped').show();
+              $('.map_legend').addClass('show');
+            }else{
+              $('.ped').hide();
+              $('.current_pointer').hide();
+              $('.map_legend').removeClass('show');
+            }
+
+            if(response['ecm']){
+              $('.ecm_data').show();
+              $('.ecm_no_data').hide();
+              $('.ecm_data ul').empty();
+
+              for(var i=0; i < response['ecm'].length; i++){
+                ecm_json = JSON.parse(response['ecm'][i]);
+                //console.log(ecm_json)
+                if(ecm_json['EnergyConservationMeasure']){
+                  $('.ecm_data ul').append('<li>'+ecm_json['EnergyConservationMeasure']+'</li>')
+                } else if(ecm_json['Description']){
+                  $('.ecm_data ul').append('<li>'+ecm_json['Description']+'</li>')
+                }
+              }
+            } else {
+              $('.ecm_data').hide();
+              $('.ecm_no_data').show();
+            }
+
+            $('.detail_list')
+              .empty()
+              .append('<tr><td>Owner</td><td>'+response['OwnerName']+'</td></tr>')
+              .append('<tr><td>Square Feet</td><td>'+numberWithCommas(response['BldgArea'])+'</td></tr>')
+              .append('<tr><td>Year Built</td><td>'+response['YearBuilt']+'</td></tr>')
+              .append('<tr><td># of Stories</td><td>'+response['NumFloors']+'</td></tr>');
+            
+            $('#details').addClass('show');
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

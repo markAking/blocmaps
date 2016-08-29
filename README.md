@@ -2,11 +2,8 @@
 
 ## Installing
 
-- Make sure you have NPM if not: curl http://npmjs.org/install.sh | sh
-- You need grunt, if you do not have it: npm install -g grunt-cli
-- Finally run: npm install.
-- then run grunt. 
-- You can go into test directory and everything should load.
+  - pip install Django==1.10
+  - python manage.py runserver
 
 -rest calls: http://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/MAPPLUTO/FeatureServer/0/query?where=LandUse=5%20AND%20Borough=%27SI%27&outFields=*&outSR=4326&f=geojson
 
