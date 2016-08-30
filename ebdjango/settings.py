@@ -51,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'blocmaps.urls'
+ROOT_URLCONF = 'ebdjango.urls'
 
 TEMPLATES = [
     {
@@ -69,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'blocmaps.wsgi.application'
+WSGI_APPLICATION = 'ebdjango.wsgi.application'
 
 
 # Database
@@ -80,9 +80,6 @@ DATABASES = {
         'ENGINE': 'django.db.backends.dummy'
     }
 }
-from mongoengine import connect
-connect('mongodb://blocpower:h3s.w8^8@ds013916.mlab.com:13916/blocmaps')
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
